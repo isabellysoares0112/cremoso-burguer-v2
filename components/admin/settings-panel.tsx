@@ -43,6 +43,7 @@ export function SettingsPanel() {
   const [formData, setFormData] = useState({
     phone: '',
     whatsapp: '',
+    instagram: '',
     openingHours: '',
     deliveryFee: 0,
     workingDays: ALL_DAYS,
@@ -71,6 +72,7 @@ export function SettingsPanel() {
           setFormData({
             phone: s.phone || '',
             whatsapp: s.whatsapp || '',
+            instagram: s.instagram || '',
             openingHours: s.openingHours || '',
             deliveryFee: s.deliveryFee || 0,
             workingDays: Array.isArray(s.workingDays) && s.workingDays.length > 0 ? s.workingDays : ALL_DAYS,
@@ -303,6 +305,15 @@ export function SettingsPanel() {
                 onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                 className="bg-muted border-border"
                 placeholder="5533999999999"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground">Instagram</Label>
+              <Input
+                value={formData.instagram}
+                onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                className="bg-muted border-border"
+                placeholder="@cremosoburguer ou o link completo do perfil"
               />
             </div>
             <div className="space-y-2">

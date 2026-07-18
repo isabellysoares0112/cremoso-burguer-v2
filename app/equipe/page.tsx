@@ -22,7 +22,7 @@ export default function EquipePage() {
   useEffect(() => {
     if (user) {
       if (user.role === 'admin') {
-        router.replace('/equipe/admin')
+        router.replace('/equipe/admin/cozinha')
       } else {
         router.replace('/equipe/entregador')
       }
@@ -42,7 +42,7 @@ export default function EquipePage() {
 
     if (success) {
       if (selectedRole === 'admin') {
-        router.push('/equipe/admin')
+        router.push('/equipe/admin/cozinha')
       } else {
         router.push('/equipe/entregador')
       }

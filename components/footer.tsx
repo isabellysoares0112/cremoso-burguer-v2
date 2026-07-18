@@ -1,12 +1,13 @@
 'use client'
 
 import Image from 'next/image'
-import { Phone, Clock, Instagram, Facebook, MessageCircle } from 'lucide-react'
+import { Phone, Clock, Instagram, MessageCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface LiveSettings {
   phone: string
   whatsapp: string
+  instagram: string
   openingHours: string
   workingDays: string[]
 }
@@ -63,6 +64,7 @@ export function Footer() {
           setLive({
             phone: json.settings.phone || '',
             whatsapp: json.settings.whatsapp || '',
+            instagram: json.settings.instagram || '',
             openingHours: json.settings.openingHours || '',
             workingDays: Array.isArray(json.settings.workingDays) ? json.settings.workingDays : [],
           })
@@ -76,8 +78,17 @@ export function Footer() {
 
   const phone = live?.phone || ''
   const whatsapp = live?.whatsapp || ''
+  const instagram = live?.instagram || ''
   const openingHours = live?.openingHours || ''
   const workingDays = live?.workingDays || []
+
+  // Aceita qualquer formato que a pessoa digitar no painel: "@cremoso",
+  // "cremoso" ou a URL completa do perfil.
+  const instagramUrl = instagram
+    ? instagram.startsWith('http')
+      ? instagram
+      : `https://instagram.com/${instagram.replace(/^@/, '')}`
+    : ''
 
   const daysLabel = formatWorkingDays(workingDays)
 
@@ -151,23 +162,21 @@ export function Footer() {
           </div>
 
           {/* Social */}
-          <div>
-            <h3 className="font-bold text-foreground mb-4">Redes Sociais</h3>
-            <div className="flex gap-3">
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
+          {instagramUrl && (
+            <div>
+              <h3 className="font-bold text-foreground mb-4">Redes Sociais</h3>
+              <div className="flex gap-3">
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  <Instagram className="w-5 h-5" />
+                </a>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Copyright */}
