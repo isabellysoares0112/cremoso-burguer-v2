@@ -96,16 +96,33 @@ export async function POST(req: NextRequest) {
     const password = String(body?.password || '').trim()
     const role = String(body?.role || '').trim()
 
-    const adminUser = process.env.ADMIN_USERNAME
-    const adminPass = process.env.ADMIN_PASSWORD
-    const entregadorUser = process.env.ENTREGADOR_USERNAME
-    const entregadorPass = process.env.ENTREGADOR_PASSWORD
+    const adminUser = (process.env.ADMIN_USERNAME || '').trim()
+    const adminPass = (process.env.ADMIN_PASSWORD || '').trim()
+    const entregadorUser = (process.env.ENTREGADOR_USERNAME || '').trim()
+    const entregadorPass = (process.env.ENTREGADOR_PASSWORD || '').trim()
     const secret = process.env.SESSION_SECRET
 
     if (!secret) {
       console.error('[auth/login] SESSION_SECRET not configured')
       return NextResponse.json({ error: 'Servidor não configurado' }, { status: 500 })
     }
+
+    // ---- Log de diagnóstico temporário — NUNCA imprime a senha, só o que é
+    // necessário pra descobrir qual das duas pontas está errada. Dá pra tirar
+    // depois que o login voltar a funcionar. Aparece em Vercel → seu projeto
+    // → aba "Logs" (ou "Runtime Logs"), depois de tentar entrar.
+    console.log('[auth/login][diagnóstico]', {
+      role_recebido: role,
+      usuario_digitado: username,
+      usuario_digitado_normalizado: username.trim().toLowerCase(),
+      tamanho_senha_digitada: password.trim().length,
+      ADMIN_USERNAME_configurado: !!process.env.ADMIN_USERNAME,
+      ADMIN_USERNAME_normalizado: adminUser.toLowerCase(),
+      ADMIN_PASSWORD_configurado: !!process.env.ADMIN_PASSWORD,
+      tamanho_ADMIN_PASSWORD: adminPass.length,
+      ENTREGADOR_USERNAME_configurado: !!process.env.ENTREGADOR_USERNAME,
+      ENTREGADOR_PASSWORD_configurado: !!process.env.ENTREGADOR_PASSWORD,
+    })
 
     const normalizedUsername = username.trim().toLowerCase()
     const rateLimitKey = `${role || 'unknown'}:${normalizedUsername || 'unknown'}`
@@ -124,7 +141,7 @@ export async function POST(req: NextRequest) {
       role === 'admin' &&
       adminUser &&
       adminPass &&
-      safeEqual(normalizedUsername, adminUser.trim().toLowerCase()) &&
+      safeEqual(normalizedUsername, adminUser.toLowerCase()) &&
       safeEqual(password, adminPass)
     ) {
       validUser = { id: '1', username, role: 'admin' }
@@ -132,10 +149,20 @@ export async function POST(req: NextRequest) {
       role === 'entregador' &&
       entregadorUser &&
       entregadorPass &&
-      safeEqual(normalizedUsername, entregadorUser.trim().toLowerCase()) &&
+      safeEqual(normalizedUsername, entregadorUser.toLowerCase()) &&
       safeEqual(password, entregadorPass)
     ) {
       validUser = { id: '2', username, role: 'entregador' }
+    }
+
+    if (!validUser && (role === 'admin' || role === 'entregador')) {
+      const cfgUser = role === 'admin' ? adminUser : entregadorUser
+      const cfgPass = role === 'admin' ? adminPass : entregadorPass
+      console.log('[auth/login][diagnóstico] motivo da falha:', {
+        variavel_de_ambiente_vazia: !cfgUser || !cfgPass,
+        usuario_bateu: !!cfgUser && safeEqual(normalizedUsername, cfgUser.toLowerCase()),
+        senha_bateu: !!cfgPass && safeEqual(password, cfgPass),
+      })
     }
 
     await recordAttempt(rateLimitKey, !!validUser)
