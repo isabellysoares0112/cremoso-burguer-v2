@@ -55,7 +55,7 @@ export function StatusBanner() {
   useEffect(() => {
     async function fetchFresh() {
       try {
-        const res = await fetch('/api/admin/settings', { cache: 'no-store' })
+        const res = await fetch('/api/settings', { cache: 'no-store' })
         if (!res.ok) return
         const json = await res.json()
         if (json.settings) {

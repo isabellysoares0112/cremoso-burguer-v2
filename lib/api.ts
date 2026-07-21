@@ -232,7 +232,7 @@ export function subscribeToOrders(onChange: () => void) {
 }
 export async function fetchSettings() {
   try {
-    const res = await fetch('/api/admin/settings', { cache: 'no-store' })
+    const res = await fetch('/api/settings', { cache: 'no-store' })
     if (!res.ok) return null
     const json = await res.json()
     return json.settings || null

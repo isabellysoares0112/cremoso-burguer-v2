@@ -30,7 +30,7 @@ export function OrderTracking({ order, onBack, onDelivered }: OrderTrackingProps
 
   // Load configurable estimated minutes from settings
   useEffect(() => {
-    fetch('/api/admin/settings')
+    fetch('/api/settings')
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         const em = json?.settings?.estimatedMinutes
