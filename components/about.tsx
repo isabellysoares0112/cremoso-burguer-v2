@@ -11,10 +11,10 @@ export function About() {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-secondary/20 rounded-2xl blur-2xl" />
             <Image
-              src="/logo.png"
+              src="/logo-quemsomos.png"
               alt="Cremoso Burguer"
-              width={500}
-              height={500}
+              width={887}
+              height={943}
               className="relative z-10 w-full max-w-md mx-auto"
             />
           </div>

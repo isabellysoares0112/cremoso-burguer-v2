@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   description: 'Hambúrgueres caprichados e absurdamente cremosos, o verdadeiro sabor do delivery que conquista.',
   generator: 'v0.app',
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+    icon: '/logo-quemsomos.png',
+    apple: '/logo-quemsomos.png',
   },
 }
 

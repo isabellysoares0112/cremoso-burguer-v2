@@ -25,22 +25,15 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center">
             <Image
-              src="/logo.png"
+              src="/logo-header.png"
               alt="Cremoso Burguer"
-              width={50}
-              height={50}
-              className="w-10 h-10"
+              width={1834}
+              height={640}
+              className="h-9 sm:h-10 w-auto"
+              priority
             />
-            <div className="flex flex-col">
-              <span className="text-primary font-black text-lg tracking-wide fire-text">
-                CREMOSO
-              </span>
-              <span className="text-secondary font-bold text-sm -mt-1 tracking-widest">
-                BURGUER
-              </span>
-            </div>
           </Link>
 
           {/* Actions: Cart + Menu */}
