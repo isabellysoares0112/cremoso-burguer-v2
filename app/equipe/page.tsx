@@ -57,11 +57,11 @@ export default function EquipePage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Image
-            src="/logo.png"
+            src="/logo-header.png"
             alt="Cremoso Burguer"
-            width={120}
-            height={120}
-            className="mx-auto mb-4"
+            width={1834}
+            height={640}
+            className="h-16 sm:h-20 w-auto mx-auto mb-4"
           />
           <h1 className="text-2xl font-bold fire-text">ÁREA DA EQUIPE</h1>
           <p className="text-muted-foreground mt-2">

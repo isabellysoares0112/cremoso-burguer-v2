@@ -9,7 +9,6 @@ export function About() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Image */}
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-secondary/20 rounded-2xl blur-2xl" />
             <Image
               src="/logo-quemsomos.png"
               alt="Cremoso Burguer"

@@ -98,17 +98,14 @@ export function Footer() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center mb-4">
               <Image
-                src="/logo.png"
+                src="/logo-header.png"
                 alt="Cremoso Burguer"
-                width={60}
-                height={60}
+                width={1834}
+                height={640}
+                className="h-12 w-auto"
               />
-              <div>
-                <span className="block text-xl font-bold fire-text">Cremoso</span>
-                <span className="block text-sm text-foreground/80">BURGUER</span>
-              </div>
             </div>
             <p className="text-muted-foreground text-sm">
               Hambúrgueres caprichados e absurdamente cremosos, uma mordida e você entende o nome!

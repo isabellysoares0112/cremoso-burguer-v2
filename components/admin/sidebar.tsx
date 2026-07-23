@@ -87,29 +87,25 @@ export function AdminSidebar() {
             className="sm:hidden flex items-center justify-center w-10 h-10 shrink-0 rounded-lg hover:bg-muted transition-colors"
             aria-label="Menu"
           >
-            <Image src="/logo.png" alt="Menu" width={28} height={28} className="rounded" />
+            <Image src="/logo-quemsomos.png" alt="Menu" width={28} height={28} className="rounded" />
           </button>
 
-          {/* Brand text: visible on desktop always; on mobile only when expanded */}
+          {/* Brand: visible on desktop always; on mobile only when expanded */}
           <Link
             href="/"
             className={[
-              'items-center gap-2 overflow-hidden',
+              'items-center overflow-hidden',
               'hidden sm:flex',
               expanded ? '!flex' : '',
             ].join(' ')}
           >
             <Image
-              src="/logo.png"
+              src="/logo-header.png"
               alt="Cremoso Burguer"
-              width={36}
-              height={36}
-              className="shrink-0 hidden sm:block"
+              width={1834}
+              height={640}
+              className="h-7 sm:h-8 w-auto shrink-0"
             />
-            <div className="whitespace-nowrap">
-              <span className="block text-base sm:text-lg font-bold fire-text leading-tight">Cremoso</span>
-              <span className="block text-[10px] sm:text-xs text-foreground/70 sm:text-foreground/80 tracking-widest">BURGUER</span>
-            </div>
           </Link>
         </div>
 

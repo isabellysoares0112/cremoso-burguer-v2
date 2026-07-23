@@ -30,17 +30,14 @@ export default function EntregadorPage() {
       {/* Simple Header */}
       <header className="bg-card border-b border-border p-4">
         <div className="container mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center">
             <Image
-              src="/logo.png"
+              src="/logo-header.png"
               alt="Cremoso Burguer"
-              width={50}
-              height={50}
+              width={1834}
+              height={640}
+              className="h-9 w-auto"
             />
-            <div>
-              <span className="block text-lg font-bold fire-text">Cremoso</span>
-              <span className="block text-xs text-foreground/80">BURGUER</span>
-            </div>
           </Link>
           <button
             onClick={handleLogout}
