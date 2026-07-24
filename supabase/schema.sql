@@ -167,6 +167,7 @@ create table if not exists configuracoes (
   dias_semana text default '["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"]',
   taxa_padrao numeric(10,2) not null default 5 check (taxa_padrao >= 0),
   status_mode text not null default 'automatic' check (status_mode in ('automatic', 'force_open', 'force_closed')),
+  estimated_minutes text default '{"novo":40,"preparando":30,"pronto":15}',
   created_at timestamptz not null default now()
 );
 alter table configuracoes enable row level security;
@@ -183,6 +184,31 @@ where not exists (select 1 from configuracoes);
 insert into storage.buckets (id, name, public)
 values ('produtos', 'produtos', true)
 on conflict (id) do nothing;
+
+-- ============================================================================
+-- CAIXA (sessões de abertura/fechamento + sangrias/suprimentos)
+-- ============================================================================
+create table if not exists caixa_sessoes (
+  id uuid primary key default gen_random_uuid(),
+  status text not null default 'aberto' check (status in ('aberto', 'fechado')),
+  total_inicial numeric(10,2) not null default 0,
+  total_final numeric(10,2),
+  aberto_em timestamptz not null default now(),
+  fechado_em timestamptz
+);
+create index if not exists caixa_sessoes_status_idx on caixa_sessoes(status);
+alter table caixa_sessoes enable row level security;
+
+create table if not exists caixa_movimentos (
+  id uuid primary key default gen_random_uuid(),
+  sessao_id uuid not null references caixa_sessoes(id) on delete cascade,
+  tipo text not null check (tipo in ('sangria', 'suprimento')),
+  valor numeric(10,2) not null,
+  obs text default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists caixa_movimentos_sessao_id_idx on caixa_movimentos(sessao_id);
+alter table caixa_movimentos enable row level security;
 
 -- ============================================================================
 -- FIM. Depois de rodar este script:

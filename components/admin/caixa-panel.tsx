@@ -32,17 +32,20 @@ interface OrderSummary {
   createdAt: string
 }
 
-const CAIXA_KEY = 'cremoso-caixa-v1'
-
-function loadCaixa(): CaixaData {
+async function fetchCaixa(): Promise<CaixaData> {
   try {
-    return JSON.parse(localStorage.getItem(CAIXA_KEY) || 'null') || { isOpen: false, totalInicial: 0, movimentos: [] }
+    const res = await fetch('/api/admin/caixa', { cache: 'no-store' })
+    if (!res.ok) return { isOpen: false, totalInicial: 0, movimentos: [] }
+    const json = await res.json()
+    return {
+      isOpen: !!json.isOpen,
+      openedAt: json.openedAt,
+      totalInicial: json.totalInicial || 0,
+      movimentos: json.movimentos || [],
+    }
   } catch {
     return { isOpen: false, totalInicial: 0, movimentos: [] }
   }
-}
-function saveCaixa(d: CaixaData) {
-  try { localStorage.setItem(CAIXA_KEY, JSON.stringify(d)) } catch { /* ignore */ }
 }
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -58,14 +61,19 @@ export function CaixaPanel() {
   const [caixaObs, setCaixaObs] = useState('')
   const [caixaAction, setCaixaAction] = useState<'sangria' | 'suprimento' | null>(null)
   const [valorInicial, setValorInicial] = useState('')
+  const [caixaLoading, setCaixaLoading] = useState(false)
 
   const [orders, setOrders] = useState<OrderSummary[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [dateFilter, setDateFilter] = useState(todayStr())
 
-  useEffect(() => {
-    setCaixa(loadCaixa())
+  const reloadCaixa = useCallback(async () => {
+    setCaixa(await fetchCaixa())
   }, [])
+
+  useEffect(() => {
+    reloadCaixa()
+  }, [reloadCaixa])
 
   const fetchOrders = useCallback(async () => {
     setLoadingOrders(true)
@@ -108,8 +116,8 @@ export function CaixaPanel() {
 
   /* Caixa movements today */
   const todayMoves = caixa.movimentos.filter(m => m.data.slice(0, 10) === todayStr())
-  const caixaSaldo = caixa.movimentos.reduce((s, m) =>
-    m.tipo === 'sangria' ? s - m.valor : s + m.valor, 0)
+  const caixaSaldo = caixa.totalInicial + caixa.movimentos.reduce((s, m) =>
+    m.tipo === 'sangria' ? s - m.valor : m.tipo === 'suprimento' ? s + m.valor : s, 0)
 
   /* 7-day chart data */
   const chartData = Array.from({ length: 7 }, (_, i) => {
@@ -129,42 +137,51 @@ export function CaixaPanel() {
   })
 
   /* Caixa actions */
-  const abrirCaixa = () => {
+  const abrirCaixa = async () => {
     const val = parseFloat(valorInicial) || 0
-    const novo: CaixaData = {
-      isOpen: true,
-      openedAt: new Date().toISOString(),
-      totalInicial: val,
-      movimentos: [{
-        id: crypto.randomUUID(), tipo: 'abertura', valor: val,
-        obs: 'Abertura de caixa', data: new Date().toISOString(),
-      }],
-    }
-    setCaixa(novo); saveCaixa(novo); setValorInicial('')
+    setCaixaLoading(true)
+    try {
+      const res = await fetch('/api/admin/caixa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'abrir', totalInicial: val }),
+      })
+      if (res.ok) { await reloadCaixa(); setValorInicial('') }
+      else { const j = await res.json().catch(() => ({})); alert(j.error || 'Erro ao abrir caixa') }
+    } finally { setCaixaLoading(false) }
   }
 
-  const fecharCaixa = () => {
-    const novo: CaixaData = {
-      ...caixa, isOpen: false,
-      movimentos: [...caixa.movimentos, {
-        id: crypto.randomUUID(), tipo: 'fechamento', valor: caixaSaldo,
-        obs: 'Fechamento de caixa', data: new Date().toISOString(),
-      }],
-    }
-    setCaixa(novo); saveCaixa(novo)
+  const fecharCaixa = async () => {
+    setCaixaLoading(true)
+    try {
+      const res = await fetch('/api/admin/caixa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'fechar', totalFinal: caixaSaldo }),
+      })
+      if (res.ok) await reloadCaixa()
+      else { const j = await res.json().catch(() => ({})); alert(j.error || 'Erro ao fechar caixa') }
+    } finally { setCaixaLoading(false) }
   }
 
-  const addMovCaixa = () => {
+  const addMovCaixa = async () => {
     if (!caixaAction) return
     const val = parseFloat(caixaValor)
     if (!val || val <= 0) return
-    const mov: CaixaMov = {
-      id: crypto.randomUUID(), tipo: caixaAction,
-      valor: val, obs: caixaObs || caixaAction, data: new Date().toISOString(),
-    }
-    const novo = { ...caixa, movimentos: [...caixa.movimentos, mov] }
-    setCaixa(novo); saveCaixa(novo)
-    setCaixaValor(''); setCaixaObs(''); setCaixaAction(null)
+    setCaixaLoading(true)
+    try {
+      const res = await fetch('/api/admin/caixa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'movimento', tipo: caixaAction, valor: val, obs: caixaObs || caixaAction }),
+      })
+      if (res.ok) {
+        await reloadCaixa()
+        setCaixaValor(''); setCaixaObs(''); setCaixaAction(null)
+      } else {
+        const j = await res.json().catch(() => ({})); alert(j.error || 'Erro ao registrar movimento')
+      }
+    } finally { setCaixaLoading(false) }
   }
 
   const paymentIcons: Record<string, React.ElementType> = {
@@ -250,7 +267,7 @@ export function CaixaPanel() {
                       className="bg-muted border-border text-foreground w-28"
                     />
                   </div>
-                  <Button onClick={abrirCaixa} className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button onClick={abrirCaixa} disabled={caixaLoading} className="bg-green-600 hover:bg-green-700 text-white">
                     Abrir Caixa
                   </Button>
                 </div>
@@ -272,6 +289,7 @@ export function CaixaPanel() {
                   </Button>
                   <Button
                     onClick={fecharCaixa}
+                    disabled={caixaLoading}
                     variant="outline"
                     className="text-sm border-destructive text-destructive hover:bg-destructive/10"
                   >
@@ -291,7 +309,7 @@ export function CaixaPanel() {
                   value={caixaObs} onChange={e => setCaixaObs(e.target.value)}
                   placeholder="Observação" className="bg-muted border-border text-foreground flex-1"
                 />
-                <Button onClick={addMovCaixa} className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0">
+                <Button onClick={addMovCaixa} disabled={caixaLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0">
                   Confirmar
                 </Button>
               </div>
