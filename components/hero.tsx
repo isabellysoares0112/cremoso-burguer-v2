@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { Flame } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function Hero() {
@@ -41,8 +42,9 @@ export function Hero() {
             <div className="flex justify-center lg:justify-start">
               <Button
                 onClick={scrollToMenu}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-8 py-6 rounded-lg glow-yellow"
+                className="group relative bg-gradient-to-br from-secondary via-secondary to-primary text-background font-black text-lg px-9 py-6 rounded-full glow-yellow border border-secondary/40 transition-all duration-300 hover:scale-105 hover:glow-orange"
               >
+                <Flame className="w-5 h-5 mr-2 transition-transform group-hover:rotate-12" />
                 FAZER MEU PEDIDO
               </Button>
             </div>

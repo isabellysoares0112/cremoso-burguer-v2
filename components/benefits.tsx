@@ -11,7 +11,7 @@ const benefits = [
   {
     icon: Beef,
     title: 'Sabor inesquecível',
-    description: 'Blend exclusivo e sabor incomparável'
+    description: 'Sabor incomparável que só tem na Cremoso'
   },
   {
     icon: Truck,

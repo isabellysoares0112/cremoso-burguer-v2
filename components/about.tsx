@@ -8,13 +8,13 @@ export function About() {
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Image */}
-          <div className="relative">
+          <div className="relative flex justify-center">
             <Image
               src="/logo-quemsomos.png"
               alt="Cremoso Burguer"
               width={887}
               height={943}
-              className="relative z-10 w-full max-w-md mx-auto"
+              className="relative z-10 w-40 sm:w-52 lg:w-64 h-auto"
             />
           </div>
 
