@@ -96,32 +96,28 @@ export function StatusBanner() {
   }
 
   return (
-    <div className="w-full flex justify-center py-2.5 px-4">
+    <div className="w-full px-3 sm:px-4 pt-2">
       <div
-        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold shadow-lg ${
-          isOpen
-            ? 'bg-green-500/15 text-green-400 border border-green-500/30 shadow-green-500/10'
-            : 'bg-destructive/15 text-destructive border border-destructive/30 shadow-destructive/10'
+        className={`max-w-5xl mx-auto flex items-center justify-center gap-2 rounded-xl py-1.5 px-4 text-xs sm:text-sm font-semibold shadow-md ${
+          isOpen ? 'bg-green-600 text-white shadow-green-600/20' : 'bg-destructive text-destructive-foreground shadow-destructive/20'
         }`}
       >
-        <span className="relative flex items-center justify-center w-2 h-2 shrink-0">
+        <span className="relative flex items-center justify-center w-1.5 h-1.5 shrink-0">
           {isOpen && (
-            <span className="absolute inline-flex w-full h-full rounded-full bg-green-500 opacity-60 animate-ping" />
+            <span className="absolute inline-flex w-full h-full rounded-full bg-white opacity-70 animate-ping" />
           )}
-          <span
-            className={`relative inline-flex w-2 h-2 rounded-full ${isOpen ? 'bg-green-500' : 'bg-destructive'}`}
-          />
+          <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-white" />
         </span>
 
         <span>{isOpen ? 'Aberto agora' : 'Fechado no momento'}</span>
 
         {openingHours && statusMode === 'automatic' && (
-          <span className="opacity-70 font-normal hidden sm:inline">
+          <span className="opacity-80 font-normal hidden sm:inline">
             · {isOpen ? openingHours : `Abrimos ${openingHours}`}
           </span>
         )}
 
-        <span className="opacity-50 font-normal hidden sm:inline">({currentTime})</span>
+        <span className="opacity-60 font-normal hidden sm:inline">({currentTime})</span>
       </div>
     </div>
   )
