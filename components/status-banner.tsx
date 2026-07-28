@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CheckCircle, XCircle } from 'lucide-react'
 import type { StatusMode } from '@/lib/types'
 
 const DAY_NAMES_PT: Record<number, string> = {
@@ -97,29 +96,33 @@ export function StatusBanner() {
   }
 
   return (
-    <div
-      className={`w-full py-2 px-4 flex items-center justify-center gap-2 text-sm font-semibold transition-colors ${
-        isOpen ? 'bg-green-600/90 text-white' : 'bg-red-700/90 text-white'
-      }`}
-    >
-      {isOpen ? (
-        <>
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          <span>Aberto agora</span>
-          {openingHours && statusMode === 'automatic' && (
-            <span className="opacity-80 font-normal">&nbsp;· {openingHours}</span>
+    <div className="w-full flex justify-center py-2.5 px-4">
+      <div
+        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold shadow-lg ${
+          isOpen
+            ? 'bg-green-500/15 text-green-400 border border-green-500/30 shadow-green-500/10'
+            : 'bg-destructive/15 text-destructive border border-destructive/30 shadow-destructive/10'
+        }`}
+      >
+        <span className="relative flex items-center justify-center w-2 h-2 shrink-0">
+          {isOpen && (
+            <span className="absolute inline-flex w-full h-full rounded-full bg-green-500 opacity-60 animate-ping" />
           )}
-        </>
-      ) : (
-        <>
-          <XCircle className="w-4 h-4 shrink-0" />
-          <span>Fechado no momento</span>
-          {openingHours && statusMode === 'automatic' && (
-            <span className="opacity-80 font-normal">&nbsp;· Abrimos {openingHours}</span>
-          )}
-        </>
-      )}
-      <span className="opacity-60 font-normal ml-1">({currentTime})</span>
+          <span
+            className={`relative inline-flex w-2 h-2 rounded-full ${isOpen ? 'bg-green-500' : 'bg-destructive'}`}
+          />
+        </span>
+
+        <span>{isOpen ? 'Aberto agora' : 'Fechado no momento'}</span>
+
+        {openingHours && statusMode === 'automatic' && (
+          <span className="opacity-70 font-normal hidden sm:inline">
+            · {isOpen ? openingHours : `Abrimos ${openingHours}`}
+          </span>
+        )}
+
+        <span className="opacity-50 font-normal hidden sm:inline">({currentTime})</span>
+      </div>
     </div>
   )
 }
