@@ -3,9 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Header } from '@/components/header'
 import { Hero } from '@/components/hero'
-import { Benefits } from '@/components/benefits'
 import { Menu } from '@/components/menu'
-import { About } from '@/components/about'
 import { Footer } from '@/components/footer'
 import { Cart } from '@/components/cart'
 import { Checkout } from '@/components/checkout'
@@ -68,10 +66,8 @@ export default function Home() {
             <StatusBanner />
           </div>
           <Hero />
-          <Benefits />
           <OrderAgain />
           <Menu />
-          <About />
           <Footer />
           <Cart onCheckout={handleCheckout} />
         </>
