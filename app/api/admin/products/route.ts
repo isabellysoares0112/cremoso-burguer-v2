@@ -31,7 +31,7 @@ async function getCategoryIdBySlug(slug: string): Promise<string | null> {
 export async function GET() {
   const [{ data: cats }, { data: prods, error }] = await Promise.all([
     supabaseAdmin.from('categorias').select('id, nome'),
-    supabaseAdmin.from('produtos').select('*').order('nome'),
+    supabaseAdmin.from('produtos').select('*').order('ordem', { ascending: true }).order('nome', { ascending: true }),
   ])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const idToSlug = new Map((cats ?? []).map((c) => [c.id, slugify(c.nome) || c.id]))
@@ -43,6 +43,7 @@ export async function GET() {
     image: p.imagem || '/images/cremoso-burguer.jpg',
     category: idToSlug.get(p.categoria_id) || 'sem-categoria',
     active: !!p.ativo,
+    ordem: p.ordem ?? 0,
   }))
   return NextResponse.json({ products })
 }
@@ -50,6 +51,17 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as ProductInput
   const categoria_id = await getCategoryIdBySlug(body.category)
+
+  // Novo produto vai pro final da categoria, não pro início — não faz
+  // sentido cadastrar um item e ele "furar fila" na frente dos outros.
+  const { data: existentes } = await supabaseAdmin
+    .from('produtos')
+    .select('ordem')
+    .eq('categoria_id', categoria_id)
+    .order('ordem', { ascending: false })
+    .limit(1)
+  const proximaOrdem = existentes && existentes.length > 0 ? (Number(existentes[0].ordem) || 0) + 1 : 0
+
   const { data, error } = await supabaseAdmin
     .from('produtos')
     .insert({
@@ -59,6 +71,7 @@ export async function POST(req: NextRequest) {
       imagem: body.image ?? null,
       categoria_id,
       ativo: !!body.active,
+      ordem: proximaOrdem,
     })
     .select()
     .single()
@@ -72,6 +85,7 @@ export async function POST(req: NextRequest) {
       image: data.imagem || '/images/cremoso-burguer.jpg',
       category: body.category,
       active: !!data.ativo,
+      ordem: data.ordem ?? 0,
     },
   })
 }

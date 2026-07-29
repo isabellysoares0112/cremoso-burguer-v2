@@ -39,10 +39,12 @@ create table if not exists produtos (
   imagem text,
   categoria_id uuid references categorias(id) on delete set null,
   ativo boolean not null default true,
+  ordem int not null default 0,
   created_at timestamptz not null default now()
 );
 create index if not exists produtos_categoria_id_idx on produtos(categoria_id);
 create index if not exists produtos_ativo_idx on produtos(ativo);
+create index if not exists produtos_ordem_idx on produtos(ordem);
 alter table produtos enable row level security;
 
 -- ============================================================================

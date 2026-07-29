@@ -104,6 +104,15 @@ export async function deleteProduct(id: string) {
   if (!res.ok) throw new Error(await res.text())
 }
 
+export async function reorderProduct(id: string, direction: 'up' | 'down'): Promise<void> {
+  const res = await fetch('/api/admin/products/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, direction }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
 // ---------------- Image Upload ----------------
 export async function uploadProductImage(file: File): Promise<string> {
   const form = new FormData()

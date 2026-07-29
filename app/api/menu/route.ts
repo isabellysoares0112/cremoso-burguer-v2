@@ -17,7 +17,7 @@ export async function GET() {
   try {
     const [{ data: cats, error: catErr }, { data: prods, error: prodErr }] = await Promise.all([
       supabaseAdmin.from('categorias').select('id, nome').order('nome'),
-      supabaseAdmin.from('produtos').select('*').order('nome'),
+      supabaseAdmin.from('produtos').select('*').order('ordem', { ascending: true }).order('nome', { ascending: true }),
     ])
     if (catErr) throw catErr
     if (prodErr) throw prodErr
@@ -39,6 +39,7 @@ export async function GET() {
       category: idToSlug.get(p.categoria_id) || 'sem-categoria',
       active: !!p.ativo,
       categoria_id: p.categoria_id,
+      ordem: p.ordem ?? 0,
     }))
 
     return NextResponse.json({ ok: true, categories, products })

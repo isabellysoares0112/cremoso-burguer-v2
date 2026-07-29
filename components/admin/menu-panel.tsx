@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Plus, Pencil, Trash2, Check, X, Upload, UtensilsCrossed, Tags } from 'lucide-react'
+import { ChevronUp, ChevronDown, Plus, Pencil, Trash2, Check, X, Upload, UtensilsCrossed, Tags } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,10 +29,13 @@ export function MenuPanel() {
     addProduct,
     updateProduct,
     deleteProduct,
+    reorderProduct,
     addCategory,
     renameCategory,
     removeCategory,
   } = useStore()
+
+  const [reordering, setReordering] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<Tab>('produtos')
   const [isAdding, setIsAdding] = useState(false)
@@ -116,6 +119,15 @@ export function MenuPanel() {
 
   const toggleActive = async (id: string, active: boolean) => {
     await updateProduct(id, { active: !active })
+  }
+
+  const handleReorder = async (id: string, direction: 'up' | 'down') => {
+    setReordering(id)
+    try {
+      await reorderProduct(id, direction)
+    } finally {
+      setReordering(null)
+    }
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -387,87 +399,104 @@ export function MenuPanel() {
             </div>
           )}
 
-          {/* Products Table */}
-          <div className="bg-card border border-border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="text-left p-4 text-foreground font-bold">Produto</th>
-                  <th className="text-left p-4 text-foreground font-bold hidden md:table-cell">
-                    Categoria
-                  </th>
-                  <th className="text-left p-4 text-foreground font-bold">Preço</th>
-                  <th className="text-left p-4 text-foreground font-bold">Status</th>
-                  <th className="text-left p-4 text-foreground font-bold">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-t border-border">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted">
-                          <Image src={product.image} alt={product.name} fill className="object-cover" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-foreground">{product.name}</p>
-                            {product.isBestSeller && (
-                              <span className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0.5 rounded-full">🔥</span>
-                            )}
-                            {product.isNew && (
-                              <span className="text-[10px] bg-secondary/20 text-secondary-foreground font-bold px-1.5 py-0.5 rounded-full">🆕</span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-1 max-w-xs">
-                            {product.description}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4 text-muted-foreground capitalize hidden md:table-cell">
-                      {cats.find((c) => c.slug === product.category)?.name || product.category}
-                    </td>
-                    <td className="p-4 text-foreground font-bold">{formatPrice(product.price)}</td>
-                    <td className="p-4">
-                      <button
-                        onClick={() => toggleActive(product.id, product.active)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          product.active
-                            ? 'bg-green-600/20 text-green-500'
-                            : 'bg-destructive/20 text-destructive'
-                        }`}
-                      >
-                        {product.active ? 'Ativo' : 'Inativo'}
-                      </button>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(product)}
-                          className="p-2 rounded-lg bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="p-2 rounded-lg bg-muted hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {products.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                      Nenhum produto cadastrado.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          {/* Products by category — a ordem só faz sentido dentro de cada categoria */}
+          <div className="space-y-6">
+            {cats.map((cat) => {
+              const catProducts = products.filter((p) => p.category === cat.slug)
+              if (catProducts.length === 0) return null
+              return (
+                <div key={cat.slug} className="bg-card border border-border rounded-lg overflow-hidden">
+                  <div className="bg-muted px-4 py-2.5 flex items-center justify-between">
+                    <h3 className="font-bold text-foreground text-sm">{cat.name}</h3>
+                    <span className="text-xs text-muted-foreground">{catProducts.length} produto(s)</span>
+                  </div>
+                  <table className="w-full">
+                    <tbody>
+                      {catProducts.map((product, idx) => (
+                        <tr key={product.id} className="border-t border-border">
+                          <td className="p-2 pl-4 w-16">
+                            <div className="flex flex-col">
+                              <button
+                                onClick={() => handleReorder(product.id, 'up')}
+                                disabled={idx === 0 || reordering === product.id}
+                                className="p-0.5 rounded text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                title="Mover pra cima"
+                              >
+                                <ChevronUp className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleReorder(product.id, 'down')}
+                                disabled={idx === catProducts.length - 1 || reordering === product.id}
+                                className="p-0.5 rounded text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                title="Mover pra baixo"
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                          <td className="p-4 pl-0">
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                                <Image src={product.image} alt={product.name} fill className="object-cover" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-foreground">{product.name}</p>
+                                  {product.isBestSeller && (
+                                    <span className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0.5 rounded-full">🔥</span>
+                                  )}
+                                  {product.isNew && (
+                                    <span className="text-[10px] bg-secondary/20 text-secondary-foreground font-bold px-1.5 py-0.5 rounded-full">🆕</span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-1 max-w-xs">
+                                  {product.description}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-foreground font-bold whitespace-nowrap">{formatPrice(product.price)}</td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => toggleActive(product.id, product.active)}
+                              className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                                product.active
+                                  ? 'bg-green-600/20 text-green-500'
+                                  : 'bg-destructive/20 text-destructive'
+                              }`}
+                            >
+                              {product.active ? 'Ativo' : 'Inativo'}
+                            </button>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEdit(product)}
+                                className="p-2 rounded-lg bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(product.id)}
+                                className="p-2 rounded-lg bg-muted hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })}
+
+            {products.length === 0 && (
+              <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">
+                Nenhum produto cadastrado.
+              </div>
+            )}
           </div>
         </>
       )}

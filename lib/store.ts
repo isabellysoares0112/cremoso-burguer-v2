@@ -48,6 +48,7 @@ interface AppState {
   addProduct: (input: Omit<Product, 'id'>) => Promise<void>
   updateProduct: (id: string, data: Partial<Product>) => Promise<void>
   deleteProduct: (id: string) => Promise<void>
+  reorderProduct: (id: string, direction: 'up' | 'down') => Promise<void>
 
   categories: api.Category[]
   loadCategories: () => Promise<void>
@@ -133,6 +134,11 @@ export const useStore = create<AppState>()((set, get) => ({
   deleteProduct: async (id) => {
     await api.deleteProduct(id)
     set((state) => ({ products: state.products.filter((p) => p.id !== id) }))
+  },
+  reorderProduct: async (id, direction) => {
+    await api.reorderProduct(id, direction)
+    const data = await api.fetchProducts()
+    set({ products: data })
   },
 
   /* CATEGORIES */

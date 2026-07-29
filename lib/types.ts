@@ -8,6 +8,7 @@ export interface Product {
   active: boolean
   isBestSeller?: boolean
   isNew?: boolean
+  ordem?: number
 }
 
 export interface Addon {
