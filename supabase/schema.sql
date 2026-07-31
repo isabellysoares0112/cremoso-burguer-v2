@@ -24,8 +24,10 @@ create extension if not exists "pgcrypto";
 create table if not exists categorias (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
+  ordem int not null default 0,
   created_at timestamptz not null default now()
 );
+create index if not exists categorias_ordem_idx on categorias(ordem);
 alter table categorias enable row level security;
 
 -- ============================================================================

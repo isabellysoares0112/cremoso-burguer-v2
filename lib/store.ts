@@ -48,7 +48,8 @@ interface AppState {
   addProduct: (input: Omit<Product, 'id'>) => Promise<void>
   updateProduct: (id: string, data: Partial<Product>) => Promise<void>
   deleteProduct: (id: string) => Promise<void>
-  reorderProduct: (id: string, direction: 'up' | 'down') => Promise<void>
+  reorderProducts: (orderedIds: string[]) => Promise<void>
+  reorderCategories: (orderedIds: string[]) => Promise<void>
 
   categories: api.Category[]
   loadCategories: () => Promise<void>
@@ -135,10 +136,20 @@ export const useStore = create<AppState>()((set, get) => ({
     await api.deleteProduct(id)
     set((state) => ({ products: state.products.filter((p) => p.id !== id) }))
   },
-  reorderProduct: async (id, direction) => {
-    await api.reorderProduct(id, direction)
-    const data = await api.fetchProducts()
-    set({ products: data })
+  reorderProducts: async (orderedIds) => {
+    // Atualiza a ordem local na hora (pra o arrastar parecer instantâneo),
+    // e confirma com o servidor em seguida.
+    set((state) => {
+      const posById = new Map(orderedIds.map((id, idx) => [id, idx]))
+      const products = [...state.products].sort((a, b) => {
+        const ai = posById.has(a.id) ? posById.get(a.id)! : -1
+        const bi = posById.has(b.id) ? posById.get(b.id)! : -1
+        if (ai === -1 || bi === -1) return 0
+        return ai - bi
+      })
+      return { products }
+    })
+    await api.reorderProducts(orderedIds)
   },
 
   /* CATEGORIES */
@@ -146,6 +157,19 @@ export const useStore = create<AppState>()((set, get) => ({
   loadCategories: async () => {
     const data = await api.fetchCategories()
     set({ categories: data })
+  },
+  reorderCategories: async (orderedIds) => {
+    set((state) => {
+      const posById = new Map(orderedIds.map((id, idx) => [id, idx]))
+      const categories = [...state.categories].sort((a, b) => {
+        const ai = posById.has(a.id) ? posById.get(a.id)! : -1
+        const bi = posById.has(b.id) ? posById.get(b.id)! : -1
+        if (ai === -1 || bi === -1) return 0
+        return ai - bi
+      })
+      return { categories }
+    })
+    await api.reorderCategories(orderedIds)
   },
   addCategory: async (input) => {
     const cat = await api.createCategory(input)

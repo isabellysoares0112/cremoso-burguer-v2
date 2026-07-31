@@ -104,11 +104,20 @@ export async function deleteProduct(id: string) {
   if (!res.ok) throw new Error(await res.text())
 }
 
-export async function reorderProduct(id: string, direction: 'up' | 'down'): Promise<void> {
+export async function reorderProducts(orderedIds: string[]): Promise<void> {
   const res = await fetch('/api/admin/products/reorder', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, direction }),
+    body: JSON.stringify({ orderedIds }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function reorderCategories(orderedIds: string[]): Promise<void> {
+  const res = await fetch('/api/admin/categories/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderedIds }),
   })
   if (!res.ok) throw new Error(await res.text())
 }

@@ -16,7 +16,7 @@ function slugify(input: string): string {
 export async function GET() {
   try {
     const [{ data: cats, error: catErr }, { data: prods, error: prodErr }] = await Promise.all([
-      supabaseAdmin.from('categorias').select('id, nome').order('nome'),
+      supabaseAdmin.from('categorias').select('id, nome, ordem').order('ordem', { ascending: true }).order('nome', { ascending: true }),
       supabaseAdmin.from('produtos').select('*').order('ordem', { ascending: true }).order('nome', { ascending: true }),
     ])
     if (catErr) throw catErr

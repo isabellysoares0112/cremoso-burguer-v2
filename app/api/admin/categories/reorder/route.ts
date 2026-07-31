@@ -4,10 +4,8 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Recebe a lista de IDs de produtos de UMA categoria, na nova ordem (de
-// cima pra baixo), e regrava a coluna "ordem" de cada um como a posição
-// dele nessa lista. Arrastar solta em qualquer posição, não só troca com
-// o vizinho — por isso reescreve a lista inteira da categoria de uma vez.
+// Recebe a lista de IDs na nova ordem (de cima pra baixo) e regrava a
+// coluna "ordem" de cada categoria como a posição dela nessa lista.
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const orderedIds = body?.orderedIds
@@ -17,7 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   const updates = orderedIds.map((id: string, index: number) =>
-    supabaseAdmin.from('produtos').update({ ordem: index }).eq('id', id)
+    supabaseAdmin.from('categorias').update({ ordem: index }).eq('id', id)
   )
 
   const results = await Promise.all(updates)
