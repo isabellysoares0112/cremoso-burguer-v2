@@ -83,7 +83,8 @@ export function Menu() {
                 {filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all group"
+                    onClick={() => setModalProduct(product)}
+                    className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all group cursor-pointer"
                   >
                     <div className="relative aspect-square overflow-hidden bg-muted">
                       <Image
@@ -114,7 +115,10 @@ export function Menu() {
                       <div className="flex items-center justify-between">
                         <span className="text-xl font-black text-primary">{formatPrice(product.price)}</span>
                         <Button
-                          onClick={() => setModalProduct(product)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setModalProduct(product)
+                          }}
                           size="icon"
                           className="w-10 h-10 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
