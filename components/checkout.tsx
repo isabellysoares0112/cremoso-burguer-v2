@@ -83,7 +83,7 @@ export function Checkout({ onBack, onComplete }: CheckoutProps) {
       setLoadingNeighborhoods(true)
       setNeighborhoodsError(false)
       try {
-        const res = await fetch('/api/admin/bairros')
+        const res = await fetch('/api/bairros')
         const json = await res.json()
         if (!res.ok) throw new Error(json.error || 'Erro ao buscar bairros')
         setNeighborhoods(json.bairros || [])

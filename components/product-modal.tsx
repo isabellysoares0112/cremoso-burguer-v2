@@ -32,7 +32,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
     setLoadingAddons(true)
     try {
       const res = await fetch(
-        `/api/admin/adicionais?categoria_slug=${encodeURIComponent(categorySlug)}`
+        `/api/adicionais?categoria_slug=${encodeURIComponent(categorySlug)}`
       )
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Erro')
