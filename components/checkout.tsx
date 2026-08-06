@@ -35,6 +35,8 @@ const paymentMethods: { id: PaymentMethod; label: string; icon: React.ElementTyp
   { id: 'link', label: 'Link de pagamento', icon: Link },
 ]
 
+export const PHONE_KEY = 'cremoso-customer-phone'
+
 function saveOrderHistory(order: Order) {
   try {
     const prev: HistoryOrder[] = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
@@ -52,6 +54,13 @@ function saveOrderHistory(order: Order) {
     }
     const updated = [entry, ...prev.filter(o => o.id !== order.id)].slice(0, 10)
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
+
+    // Salva o telefone também — é o que permite a página "Acompanhar
+    // Pedido" reconhecer o cliente automaticamente da próxima vez, sem
+    // precisar digitar número e telefone de novo.
+    if (order.customer?.phone) {
+      localStorage.setItem(PHONE_KEY, order.customer.phone)
+    }
   } catch { /* ignore */ }
 }
 

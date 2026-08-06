@@ -11,12 +11,22 @@ function onlyDigits(v: string): string {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const numero = searchParams.get('numero')
+  const numerosRaw = searchParams.get('numeros') // lista separada por vírgula, ex: "12,15,19"
   const telefoneRaw = searchParams.get('telefone')
 
-  // Exigimos SEMPRE número do pedido + telefone juntos. Número sozinho é
+  const numerosList = numerosRaw
+    ? numerosRaw
+        .split(',')
+        .map((n) => Number(n.trim()))
+        .filter((n) => Number.isFinite(n) && n > 0)
+    : numero
+    ? [Number(numero)]
+    : []
+
+  // Exigimos SEMPRE número(s) do pedido + telefone juntos. Número sozinho é
   // sequencial e fácil de adivinhar — permitir isso vazaria nome, telefone
   // e endereço de qualquer pedido pra qualquer pessoa.
-  if (!numero || !telefoneRaw) {
+  if (numerosList.length === 0 || !telefoneRaw) {
     return NextResponse.json(
       { error: 'Informe o número do pedido e o telefone usado no pedido.' },
       { status: 400 }
@@ -31,9 +41,9 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from('pedidos')
     .select('*')
-    .eq('numero_pedido', Number(numero))
+    .in('numero_pedido', numerosList)
     .order('created_at', { ascending: false })
-    .limit(5)
+    .limit(Math.max(numerosList.length * 2, 5))
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Search, CheckCircle2, Clock, ChefHat, Package, Truck } from 'lucide-react'
+import { ArrowLeft, Search, CheckCircle2, Clock, ChefHat, Package, Truck, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatPrice } from '@/lib/utils'
+import { HISTORY_KEY } from '@/components/order-again'
+import { PHONE_KEY } from '@/components/checkout'
 
 type OrderStatus = 'novo' | 'preparando' | 'pronto' | 'entregue'
 
@@ -40,14 +42,70 @@ function parseItems(observacoes: string | null) {
   return []
 }
 
+// Lê os números de pedido salvos no navegador (de compras anteriores
+// feitas nesse mesmo aparelho) e o telefone usado da última vez.
+function readSavedOrders(): { numeros: number[]; telefone: string } {
+  try {
+    const historyRaw = localStorage.getItem(HISTORY_KEY)
+    const telefone = localStorage.getItem(PHONE_KEY) || ''
+    const history: { number: number }[] = historyRaw ? JSON.parse(historyRaw) : []
+    const numeros = history.map((h) => h.number).filter((n) => Number.isFinite(n))
+    return { numeros, telefone }
+  } catch {
+    return { numeros: [], telefone: '' }
+  }
+}
+
 export default function AcompanharPedido() {
   const [numeroPedido, setNumeroPedido] = useState('')
   const [telefone, setTelefone] = useState('')
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
+  const [autoDetectado, setAutoDetectado] = useState(false)
+  const [mostrarBuscaManual, setMostrarBuscaManual] = useState(false)
+  const [numerosAtivos, setNumerosAtivos] = useState<number[]>([])
 
-  async function buscarPedido(e: React.FormEvent) {
+  const buscarPorNumeros = useCallback(async (numeros: number[], tel: string) => {
+    if (numeros.length === 0 || !tel.trim()) return
+    setErro('')
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      params.set('numeros', numeros.join(','))
+      params.set('telefone', tel.trim().replace(/\D/g, ''))
+      const res = await fetch(`/api/track?${params}`)
+      const json = await res.json()
+      if (!res.ok) {
+        setErro(json.error || 'Pedido não encontrado.')
+        setOrders([])
+      } else {
+        const found = json.orders || []
+        // Se algum pedido ainda estiver em andamento, mostra só esses —
+        // senão, mostra o mais recente de todos (já entregues inclusive).
+        const emAndamento = found.filter((o: any) => o.status !== 'entregue' && o.status !== 'cancelado')
+        setOrders(emAndamento.length > 0 ? emAndamento : found.slice(0, 1))
+      }
+    } catch {
+      setErro('Erro ao buscar pedido. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Ao abrir a página, tenta reconhecer o cliente automaticamente pelos
+  // pedidos que ele já fez nesse mesmo aparelho — sem precisar digitar nada.
+  useEffect(() => {
+    const { numeros, telefone: tel } = readSavedOrders()
+    if (numeros.length > 0 && tel) {
+      setAutoDetectado(true)
+      setNumerosAtivos(numeros)
+      setTelefone(tel)
+      buscarPorNumeros(numeros, tel)
+    }
+  }, [buscarPorNumeros])
+
+  async function buscarPedidoManual(e: React.FormEvent) {
     e.preventDefault()
     setErro('')
     setOrders([])
@@ -57,57 +115,32 @@ export default function AcompanharPedido() {
       return
     }
 
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      params.set('numero', numeroPedido.trim())
-      params.set('telefone', telefone.trim().replace(/\D/g, ''))
-
-      const res = await fetch(`/api/track?${params}`)
-      const json = await res.json()
-
-      if (!res.ok) {
-        setErro(json.error || 'Pedido não encontrado. Verifique os dados informados.')
-      } else {
-        setOrders(json.orders || [])
-      }
-    } catch {
-      setErro('Erro ao buscar pedido. Tente novamente.')
-    } finally {
-      setLoading(false)
+    setAutoDetectado(false)
+    const numero = parseInt(numeroPedido.trim(), 10)
+    if (!Number.isFinite(numero)) {
+      setErro('Número de pedido inválido.')
+      return
     }
+    setNumerosAtivos([numero])
+    await buscarPorNumeros([numero], telefone)
   }
 
   // Atualização automática do status: em vez de assinar mudanças em tempo real
   // direto no banco (o que exigiria permitir leitura pública na tabela de
   // pedidos), consultamos de novo a mesma rota /api/track — que já exige
-  // número do pedido + telefone — a cada 12s, enquanto o pedido não estiver
-  // finalizado.
+  // número(s) do pedido + telefone — a cada 12s, enquanto algum pedido não
+  // estiver finalizado.
   useEffect(() => {
-    if (orders.length === 0) return
+    if (orders.length === 0 || numerosAtivos.length === 0 || !telefone) return
     const algumPendente = orders.some((o) => o.status !== 'entregue' && o.status !== 'cancelado')
     if (!algumPendente) return
 
-    const numero = numeroPedido.trim()
-    const tel = telefone.trim().replace(/\D/g, '')
-    if (!numero || !tel) return
-
-    const interval = setInterval(async () => {
-      try {
-        const params = new URLSearchParams()
-        params.set('numero', numero)
-        params.set('telefone', tel)
-        const res = await fetch(`/api/track?${params}`)
-        if (!res.ok) return
-        const json = await res.json()
-        if (json.orders) setOrders(json.orders)
-      } catch {
-        // silencia erro de rede, tenta de novo no próximo ciclo
-      }
+    const interval = setInterval(() => {
+      buscarPorNumeros(numerosAtivos, telefone)
     }, 12000)
 
     return () => clearInterval(interval)
-  }, [orders, numeroPedido, telefone])
+  }, [orders, numerosAtivos, telefone, buscarPorNumeros])
 
   return (
     <main className="min-h-screen bg-background">
@@ -124,45 +157,68 @@ export default function AcompanharPedido() {
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
 
-        {/* FORM */}
-        <form onSubmit={buscarPedido} className="space-y-4">
-          <div className="space-y-1">
-            <Label htmlFor="numero">Número do pedido</Label>
-            <Input
-              id="numero"
-              type="text"
-              placeholder="Ex: 12"
-              value={numeroPedido}
-              onChange={(e) => setNumeroPedido(e.target.value)}
-              required
-            />
+        {/* DETECTADO AUTOMATICAMENTE */}
+        {autoDetectado && orders.length > 0 && (
+          <div className="flex items-center justify-between bg-muted/40 border border-border rounded-lg px-4 py-2.5 text-sm">
+            <span className="text-muted-foreground">Mostrando seus pedidos deste aparelho automaticamente</span>
+            <button
+              type="button"
+              onClick={() => setMostrarBuscaManual((v) => !v)}
+              className="text-primary font-medium hover:underline shrink-0 ml-3"
+            >
+              Buscar outro
+            </button>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="telefone">Telefone usado no pedido</Label>
-            <Input
-              id="telefone"
-              type="text"
-              placeholder="Ex: 11999990000"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              required
-            />
+        )}
+
+        {/* FORM — escondido quando a detecção automática já achou algo, a menos que peçam "Buscar outro" */}
+        {(!autoDetectado || orders.length === 0 || mostrarBuscaManual) && (
+          <form onSubmit={buscarPedidoManual} className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="numero">Número do pedido</Label>
+              <Input
+                id="numero"
+                type="text"
+                placeholder="Ex: 12"
+                value={numeroPedido}
+                onChange={(e) => setNumeroPedido(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="telefone">Telefone usado no pedido</Label>
+              <Input
+                id="telefone"
+                type="text"
+                placeholder="Ex: 11999990000"
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+            >
+              {loading ? (
+                'Buscando...'
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <Search size={16} />
+                  Buscar pedido
+                </span>
+              )}
+            </Button>
+          </form>
+        )}
+
+        {loading && orders.length === 0 && (
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm py-6">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            Buscando seu pedido...
           </div>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-          >
-            {loading ? (
-              'Buscando...'
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <Search size={16} />
-                Buscar pedido
-              </span>
-            )}
-          </Button>
-        </form>
+        )}
 
         {/* ERRO */}
         {erro && (
