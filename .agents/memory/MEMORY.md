@@ -1,0 +1,1 @@
+- [Instalação de dependências](package-installation.md) — instalar o projeto como pacote local pode adicionar um link para si mesmo e reescrever metadados do lockfile.

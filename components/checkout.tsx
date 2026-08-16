@@ -280,7 +280,6 @@ ${itemsList}${globalObsLine}
 
     if (selectedPayment === 'pix') {
       setIsSubmitting(false)
-      console.log(`[PIX Checkout] subtotal: ${subtotal}, taxa: ${neighborhoodFee}, desconto: ${discountValue}, total final: ${total}`)
       setPixTotal(total)
       setPixOrder(order)
       return

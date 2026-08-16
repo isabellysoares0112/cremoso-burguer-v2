@@ -9,12 +9,25 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://cremosoburguer.netlify.app'),
   title: 'Cremoso Burguer | Delivery',
   description: 'Hambúrgueres caprichados e absurdamente cremosos, o verdadeiro sabor do delivery que conquista.',
-  generator: 'v0.app',
   icons: {
     icon: '/logo-quemsomos.png',
     apple: '/logo-quemsomos.png',
+  },
+  openGraph: {
+    title: 'Cremoso Burguer | Delivery',
+    description: 'Hambúrgueres caprichados e absurdamente cremosos, o verdadeiro sabor do delivery que conquista.',
+    images: ['/logo-header.png'],
+    locale: 'pt_BR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Cremoso Burguer | Delivery',
+    description: 'Hambúrgueres caprichados e absurdamente cremosos, o verdadeiro sabor do delivery que conquista.',
+    images: ['/logo-header.png'],
   },
 }
 
